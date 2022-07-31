@@ -24,6 +24,7 @@ bool godMode = false;
 bool autoGuard = false;
 bool infiniteFever = false;
 bool infiniteJump = false;
+bool infiniteDash = false;
 
 void InitImGui()
 {
@@ -78,6 +79,7 @@ HRESULT __stdcall hkPresent(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT 
 		ImGui::Checkbox("Auto Guard", &autoGuard);
 		ImGui::Checkbox("Infinite Fever", &infiniteFever);
 		ImGui::Checkbox("Infinite Jump", &infiniteJump);
+		ImGui::Checkbox("Infinite Dash", &infiniteDash);
 
 		ImGui::End();
 	}
@@ -109,11 +111,10 @@ DWORD WINAPI CheatMenuThread(LPVOID lpReserved)
 	return TRUE;
 }
 
+// GameManager_CreatePlayer hook
 typedef void(__stdcall* oGameManagerCreatePlayer)(GameManager*, MethodInfo*);
 static oGameManagerCreatePlayer oGameManager_CreatePlayer = NULL;
-
 GameManager* gameManager = nullptr;
-
 void hkGameManager_CreatePlayer(GameManager* __this, MethodInfo* method) {
 	if (__this) {
 		gameManager = __this;
@@ -125,11 +126,20 @@ void hkGameManager_CreatePlayer(GameManager* __this, MethodInfo* method) {
 	return oGameManager_CreatePlayer(__this, method);
 }
 
+// CharacterBehaviour_IsDash hook
+typedef bool(__stdcall* oCharacterBehaviourIsDash)(CharacterBehaviour*, MethodInfo*);
+static oCharacterBehaviourIsDash oCharacterBehaviour_IsDash = NULL;
+bool hkCharacterBehaviour_IsDash(CharacterBehaviour* __this, MethodInfo* method) {
+	if (infiniteDash) return false;
+	return oCharacterBehaviour_IsDash(__this, method);
+}
+
 DWORD WINAPI HookThread(LPVOID lpReserved)
 {
 	MH_Initialize();
 
 	MH_CreateHook(GameManager_CreatePlayer, &hkGameManager_CreatePlayer, (void**)&oGameManager_CreatePlayer);
+	MH_CreateHook(CharacterBehaviour_IsDash, &hkCharacterBehaviour_IsDash, (void**)&oCharacterBehaviour_IsDash);
 
 	MH_EnableHook(MH_ALL_HOOKS);
 
@@ -176,6 +186,10 @@ DWORD WINAPI CheatThread(LPVOID lpReserved)
 		if (infiniteJump) {
 			characterBehaviour->fields.mAirJumpCnt = 0;
 		}
+
+		/*system("cls");
+		std::cout << "IsDash: " << CharacterBehaviour_IsDash(characterBehaviour, nullptr) << std::endl;
+		std::cout << "mDashRequest: " << characterBehaviour->fields.mDashRequest << std::endl;*/
 	}
 
 	return TRUE;
