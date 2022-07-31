@@ -174,5 +174,6 @@
     <None Include="kiero\minhook\dll_resources\MinHook.def">
       <Filter>kiero</Filter>
     </None>
+    <None Include="packages.config" />
   </ItemGroup>
 </Project>

@@ -1,5 +1,7 @@
 #include "pch-il2cpp.h"
 #include "includes.h"
+#include "kiero/minhook/include/MinHook.h"
+#include <iostream>
 
 using namespace app;
 
@@ -18,7 +20,7 @@ extern const LPCWSTR LOG_FILE = L"il2cpp-log.txt";
 bool isRunning = true;
 bool isShowMenu = true;
 
-PlayerController* playerController;
+bool infiniteHP = false;
 
 void InitImGui()
 {
@@ -68,6 +70,9 @@ HRESULT __stdcall hkPresent(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT 
 
 	if (isShowMenu) {
 		ImGui::Begin("ImGui Window");
+
+		ImGui::Checkbox("Infinite HP", &infiniteHP);
+
 		ImGui::End();
 	}
 
@@ -98,14 +103,58 @@ DWORD WINAPI CheatMenuThread(LPVOID lpReserved)
 	return TRUE;
 }
 
+typedef void(__stdcall* oGameManagerCreatePlayer)(GameManager*, MethodInfo*);
+static oGameManagerCreatePlayer oGameManager_CreatePlayer = NULL;
+
+GameManager* gameManager = nullptr;
+
+void hkGameManager_CreatePlayer(GameManager* __this, MethodInfo* method) {
+	if (__this) {
+		gameManager = __this;
+		std::cout << "Found GameManager: " << std::hex << __this << std::endl;
+	}
+	else {
+		gameManager = nullptr;
+	}
+	return oGameManager_CreatePlayer(__this, method);
+}
+
+DWORD WINAPI HookThread(LPVOID lpReserved)
+{
+	MH_Initialize();
+
+	MH_CreateHook(GameManager_CreatePlayer, &hkGameManager_CreatePlayer, (void**)&oGameManager_CreatePlayer);
+
+	MH_EnableHook(MH_ALL_HOOKS);
+
+	while (isRunning) Sleep(1000);
+
+	MH_DisableHook(MH_ALL_HOOKS);
+
+	MH_Uninitialize();
+
+	return TRUE;
+}
+
 DWORD WINAPI CheatThread(LPVOID lpReserved)
 {
 	while (isRunning)
 	{
 		Sleep(10);
+		if (gameManager == nullptr) continue;
 
-		if (il2cppi_is_initialized(PlayerController__TypeInfo)) {
-			
+		if (infiniteHP) {
+			try
+			{
+				PlayerController* mPlayerCtrl = gameManager->fields.mPlayerCtrl;
+				BattleCharaData* battleCharaData = mPlayerCtrl->fields.Character;
+				BattleCharaParameter* battleCharaParameter = battleCharaData->fields.Parameter;
+				BattleCharaParameter_SetHp(battleCharaParameter, 9999, nullptr);
+			}
+			catch (const std::exception&)
+			{
+
+			}
 		}
 	}
 
@@ -140,9 +189,11 @@ BOOL WINAPI DllMain(HMODULE hMod, DWORD dwReason, LPVOID lpReserved)
 		// il2cppi_log_write("Startup");
 
 		// If you would like to output to a new console window, use il2cppi_new_console() to open one and redirect stdout
-		// il2cppi_new_console();
+		il2cppi_new_console();
 
 		CreateThread(nullptr, 0, MainThread, hMod, 0, nullptr);
+
+		CreateThread(nullptr, 0, HookThread, hMod, 0, nullptr);
 		CreateThread(nullptr, 0, CheatMenuThread, hMod, 0, nullptr);
 		CreateThread(nullptr, 0, CheatThread, hMod, 0, nullptr);
 
