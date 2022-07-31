@@ -20,7 +20,7 @@ extern const LPCWSTR LOG_FILE = L"il2cpp-log.txt";
 bool isRunning = true;
 bool isShowMenu = true;
 
-bool infiniteHP = false;
+bool godMode = false;
 
 void InitImGui()
 {
@@ -71,7 +71,7 @@ HRESULT __stdcall hkPresent(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT 
 	if (isShowMenu) {
 		ImGui::Begin("ImGui Window");
 
-		ImGui::Checkbox("Infinite HP", &infiniteHP);
+		ImGui::Checkbox("God Mode", &godMode);
 
 		ImGui::End();
 	}
@@ -143,18 +143,20 @@ DWORD WINAPI CheatThread(LPVOID lpReserved)
 		Sleep(10);
 		if (gameManager == nullptr) continue;
 
-		if (infiniteHP) {
-			try
-			{
-				PlayerController* mPlayerCtrl = gameManager->fields.mPlayerCtrl;
-				BattleCharaData* battleCharaData = mPlayerCtrl->fields.Character;
-				BattleCharaParameter* battleCharaParameter = battleCharaData->fields.Parameter;
-				BattleCharaParameter_SetHp(battleCharaParameter, 9999, nullptr);
-			}
-			catch (const std::exception&)
-			{
 
-			}
+		// godMode
+		try
+		{
+			PlayerController* mPlayerCtrl = gameManager->fields.mPlayerCtrl;
+			BattleCharaData* battleCharaData = mPlayerCtrl->fields.Character;
+			//BattleCharaParameter* battleCharaParameter = battleCharaData->fields.Parameter;
+			//BattleCharaParameter_SetHp(battleCharaParameter, 9999, nullptr);
+
+			BattleCharaData_SetNoHit(battleCharaData, godMode, nullptr);
+		}
+		catch (const std::exception&)
+		{
+
 		}
 	}
 
