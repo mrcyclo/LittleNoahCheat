@@ -21,6 +21,9 @@ bool isRunning = true;
 bool isShowMenu = true;
 
 bool godMode = false;
+bool autoGuard = false;
+bool infiniteFever = false;
+bool infiniteJump = false;
 
 void InitImGui()
 {
@@ -72,6 +75,9 @@ HRESULT __stdcall hkPresent(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT 
 		ImGui::Begin("ImGui Window");
 
 		ImGui::Checkbox("God Mode", &godMode);
+		ImGui::Checkbox("Auto Guard", &autoGuard);
+		ImGui::Checkbox("Infinite Fever", &infiniteFever);
+		ImGui::Checkbox("Infinite Jump", &infiniteJump);
 
 		ImGui::End();
 	}
@@ -143,20 +149,32 @@ DWORD WINAPI CheatThread(LPVOID lpReserved)
 		Sleep(10);
 		if (gameManager == nullptr) continue;
 
+		PlayerController* playerController = gameManager->fields.mPlayerCtrl;
+		if (playerController == nullptr) continue;
+
+		PlayerCharaData* playerCharaData = gameManager->fields.mPlayerCharaData;
+		if (playerCharaData == nullptr) continue;
+
+		BattleCharaData* battleCharaData = playerController->fields.Character;
+		if (battleCharaData == nullptr) continue;
+
+		CharacterBehaviour* characterBehaviour = battleCharaData->fields.Character;
+		if (characterBehaviour == nullptr) continue;
 
 		// godMode
-		try
-		{
-			PlayerController* mPlayerCtrl = gameManager->fields.mPlayerCtrl;
-			BattleCharaData* battleCharaData = mPlayerCtrl->fields.Character;
-			//BattleCharaParameter* battleCharaParameter = battleCharaData->fields.Parameter;
-			//BattleCharaParameter_SetHp(battleCharaParameter, 9999, nullptr);
+		BattleCharaData_SetNoHit(battleCharaData, godMode, nullptr);
 
-			BattleCharaData_SetNoHit(battleCharaData, godMode, nullptr);
+		// autoGuard
+		BattleCharaData_SetAutoGurad(battleCharaData, autoGuard, nullptr);
+
+		// infiniteFever
+		if (infiniteFever) {
+			playerCharaData->fields.FeverGauge = playerCharaData->fields.FeverGaugeMax;
 		}
-		catch (const std::exception&)
-		{
 
+		// infiniteJump
+		if (infiniteJump) {
+			characterBehaviour->fields.mAirJumpCnt = 0;
 		}
 	}
 
