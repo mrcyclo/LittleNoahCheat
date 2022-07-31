@@ -18,13 +18,14 @@ ID3D11RenderTargetView* mainRenderTargetView;
 extern const LPCWSTR LOG_FILE = L"il2cpp-log.txt";
 
 bool isRunning = true;
-bool isShowMenu = true;
+bool isShowMenu = false;
 
 bool godMode = false;
 bool autoGuard = false;
 bool infiniteFever = false;
 bool infiniteJump = false;
 bool infiniteDash = false;
+float moveSpeed = 1;
 
 void InitImGui()
 {
@@ -80,6 +81,7 @@ HRESULT __stdcall hkPresent(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT 
 		ImGui::Checkbox("Infinite Fever", &infiniteFever);
 		ImGui::Checkbox("Infinite Jump", &infiniteJump);
 		ImGui::Checkbox("Infinite Dash", &infiniteDash);
+		ImGui::SliderFloat("Speed", &moveSpeed, 1, 5);
 
 		ImGui::End();
 	}
@@ -187,9 +189,11 @@ DWORD WINAPI CheatThread(LPVOID lpReserved)
 			characterBehaviour->fields.mAirJumpCnt = 0;
 		}
 
+		// moveSpeed
+		CharacterBehaviour_SetUserMoveSpeed(characterBehaviour, moveSpeed, nullptr);
+
 		/*system("cls");
-		std::cout << "IsDash: " << CharacterBehaviour_IsDash(characterBehaviour, nullptr) << std::endl;
-		std::cout << "mDashRequest: " << characterBehaviour->fields.mDashRequest << std::endl;*/
+		std::cout << "GetUserMoveSpeed: " << CharacterBehaviour_GetUserMoveSpeed(characterBehaviour, nullptr) << std::endl;*/
 	}
 
 	return TRUE;
