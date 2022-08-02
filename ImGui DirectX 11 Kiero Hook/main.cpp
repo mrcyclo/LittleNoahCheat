@@ -277,7 +277,7 @@ BOOL WINAPI DllMain(HMODULE hMod, DWORD dwReason, LPVOID lpReserved)
 		// il2cppi_log_write("Startup");
 
 		// If you would like to output to a new console window, use il2cppi_new_console() to open one and redirect stdout
-		il2cppi_new_console();
+		//il2cppi_new_console();
 
 		CreateThread(nullptr, 0, MainThread, hMod, 0, nullptr);
 
