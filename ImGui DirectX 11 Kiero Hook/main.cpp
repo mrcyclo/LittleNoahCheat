@@ -29,6 +29,7 @@ float moveSpeed = 1;
 bool infiniteGold = false;
 bool disableCameraEvent = false;
 bool oneHit = false;
+bool infiniteKey = false;
 
 BattleCharaParameter* playerBattleCharaParameter = nullptr;
 
@@ -84,6 +85,7 @@ HRESULT __stdcall hkPresent(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT 
 		ImGui::Checkbox("God Mode", &godMode);
 		ImGui::Checkbox("Auto Guard", &autoGuard);
 		ImGui::Checkbox("Infinite Gold", &infiniteGold);
+		ImGui::Checkbox("Infinite Key", &infiniteKey);
 		ImGui::Checkbox("Infinite Fever", &infiniteFever);
 		ImGui::Checkbox("Infinite Jump", &infiniteJump);
 		ImGui::Checkbox("Infinite Dash", &infiniteDash);
@@ -233,6 +235,12 @@ DWORD WINAPI CheatThread(LPVOID lpReserved)
 		if (infiniteGold) {
 			int* gold = (int*)(reinterpret_cast<char*>(gameStatus) + 0x1D0 + 0x18);
 			*gold = 9999;
+		}
+
+		// infiniteKey
+		if (infiniteKey) {
+			int* keyNum = (int*)(reinterpret_cast<char*>(gameStatus) + 0x1D0 + 0x1C);
+			*keyNum = 99;
 		}
 
 		//system("cls");
