@@ -18,7 +18,7 @@ ID3D11RenderTargetView* mainRenderTargetView;
 extern const LPCWSTR LOG_FILE = L"il2cpp-log.txt";
 
 bool isRunning = true;
-bool isShowMenu = false;
+bool isShowMenu = true;
 
 bool godMode = false;
 bool autoGuard = false;
@@ -26,6 +26,7 @@ bool infiniteFever = false;
 bool infiniteJump = false;
 bool infiniteDash = false;
 float moveSpeed = 1;
+bool infiniteGold = false;
 
 void InitImGui()
 {
@@ -78,6 +79,7 @@ HRESULT __stdcall hkPresent(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT 
 
 		ImGui::Checkbox("God Mode", &godMode);
 		ImGui::Checkbox("Auto Guard", &autoGuard);
+		ImGui::Checkbox("Infinite Gold", &infiniteGold);
 		ImGui::Checkbox("Infinite Fever", &infiniteFever);
 		ImGui::Checkbox("Infinite Jump", &infiniteJump);
 		ImGui::Checkbox("Infinite Dash", &infiniteDash);
@@ -113,19 +115,18 @@ DWORD WINAPI CheatMenuThread(LPVOID lpReserved)
 	return TRUE;
 }
 
-// GameManager_CreatePlayer hook
-typedef void(__stdcall* oGameManagerCreatePlayer)(GameManager*, MethodInfo*);
-static oGameManagerCreatePlayer oGameManager_CreatePlayer = NULL;
+// GameManager_Update hook
+typedef void(__stdcall* oGameManagerUpdate)(GameManager*, TimeData*, MethodInfo*);
+static oGameManagerUpdate oGameManager_Update = NULL;
 GameManager* gameManager = nullptr;
-void hkGameManager_CreatePlayer(GameManager* __this, MethodInfo* method) {
+void hkGameManager_Update(GameManager* __this, TimeData* _timeData, MethodInfo* method) {
 	if (__this) {
 		gameManager = __this;
-		std::cout << "Found GameManager: " << std::hex << __this << std::endl;
 	}
 	else {
 		gameManager = nullptr;
 	}
-	return oGameManager_CreatePlayer(__this, method);
+	return oGameManager_Update(__this, _timeData, method);
 }
 
 // CharacterBehaviour_IsDash hook
@@ -140,7 +141,7 @@ DWORD WINAPI HookThread(LPVOID lpReserved)
 {
 	MH_Initialize();
 
-	MH_CreateHook(GameManager_CreatePlayer, &hkGameManager_CreatePlayer, (void**)&oGameManager_CreatePlayer);
+	MH_CreateHook(GameManager_Update, &hkGameManager_Update, (void**)&oGameManager_Update);
 	MH_CreateHook(CharacterBehaviour_IsDash, &hkCharacterBehaviour_IsDash, (void**)&oCharacterBehaviour_IsDash);
 
 	MH_EnableHook(MH_ALL_HOOKS);
@@ -192,8 +193,11 @@ DWORD WINAPI CheatThread(LPVOID lpReserved)
 		// moveSpeed
 		CharacterBehaviour_SetUserMoveSpeed(characterBehaviour, moveSpeed, nullptr);
 
-		/*system("cls");
-		std::cout << "GetUserMoveSpeed: " << CharacterBehaviour_GetUserMoveSpeed(characterBehaviour, nullptr) << std::endl;*/
+		// infiniteGold
+		if (infiniteGold) {
+			system("cls");
+			//std::cout << "mViewGold: " << goldView->fields.mGold.current << std::endl;
+		}
 	}
 
 	return TRUE;
