@@ -28,6 +28,9 @@ bool infiniteDash = false;
 float moveSpeed = 1;
 bool infiniteGold = false;
 bool disableCameraEvent = false;
+bool oneHit = false;
+
+BattleCharaParameter* playerBattleCharaParameter = nullptr;
 
 void InitImGui()
 {
@@ -86,6 +89,7 @@ HRESULT __stdcall hkPresent(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT 
 		ImGui::Checkbox("Infinite Dash", &infiniteDash);
 		ImGui::SliderFloat("Speed", &moveSpeed, 1, 5);
 		ImGui::Checkbox("Disable Camera Event", &disableCameraEvent);
+		ImGui::Checkbox("One Hit", &oneHit);
 
 		ImGui::End();
 	}
@@ -147,6 +151,17 @@ void hkCameraUtility_StartEventCamera(Camera* _cam, bool _cameraInterp, MethodIn
 	return oCameraUtility_StartEventCamera(_cam, _cameraInterp, method);
 }
 
+// BattleCharaParameter_DamageHp hook
+typedef void(__stdcall* oBattleCharaParameterDamageHp)(BattleCharaParameter*, int32_t, MethodInfo*);
+static oBattleCharaParameterDamageHp oBattleCharaParameter_DamageHp = NULL;
+void hkBattleCharaParameter_DamageHp(BattleCharaParameter* __this, int32_t _val, MethodInfo* method) {
+	if (oneHit && playerBattleCharaParameter != nullptr && __this != playerBattleCharaParameter) {
+		_val = INT_MAX;
+	}
+
+	return oBattleCharaParameter_DamageHp(__this, _val, method);
+}
+
 DWORD WINAPI HookThread(LPVOID lpReserved)
 {
 	MH_Initialize();
@@ -154,6 +169,7 @@ DWORD WINAPI HookThread(LPVOID lpReserved)
 	MH_CreateHook(GameMain_Update, &hkGameMain_Update, (void**)&oGameMain_Update);
 	MH_CreateHook(CharacterBehaviour_IsDash, &hkCharacterBehaviour_IsDash, (void**)&oCharacterBehaviour_IsDash);
 	MH_CreateHook(CameraUtility_StartEventCamera, &hkCameraUtility_StartEventCamera, (void**)&oCameraUtility_StartEventCamera);
+	MH_CreateHook(BattleCharaParameter_DamageHp, &hkBattleCharaParameter_DamageHp, (void**)&oBattleCharaParameter_DamageHp);
 
 	MH_EnableHook(MH_ALL_HOOKS);
 
@@ -190,6 +206,9 @@ DWORD WINAPI CheatThread(LPVOID lpReserved)
 
 		GameStatus* gameStatus = GameMain_GetGameStatus(gameMain, nullptr);
 		if (gameStatus == nullptr) continue;
+
+		// Set global variables
+		playerBattleCharaParameter = battleCharaData->fields.Parameter;
 
 		// godMode
 		BattleCharaData_SetNoHit(battleCharaData, godMode, nullptr);
