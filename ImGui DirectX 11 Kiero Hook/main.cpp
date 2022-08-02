@@ -27,6 +27,7 @@ bool infiniteJump = false;
 bool infiniteDash = false;
 float moveSpeed = 1;
 bool infiniteGold = false;
+bool disableCameraEvent = false;
 
 void InitImGui()
 {
@@ -84,6 +85,7 @@ HRESULT __stdcall hkPresent(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT 
 		ImGui::Checkbox("Infinite Jump", &infiniteJump);
 		ImGui::Checkbox("Infinite Dash", &infiniteDash);
 		ImGui::SliderFloat("Speed", &moveSpeed, 1, 5);
+		ImGui::Checkbox("Disable Camera Event", &disableCameraEvent);
 
 		ImGui::End();
 	}
@@ -137,12 +139,21 @@ bool hkCharacterBehaviour_IsDash(CharacterBehaviour* __this, MethodInfo* method)
 	return oCharacterBehaviour_IsDash(__this, method);
 }
 
+// CameraUtility_StartEventCamera hook
+typedef void(__stdcall* oCameraUtilityStartEventCamera)(Camera*, bool, MethodInfo*);
+static oCameraUtilityStartEventCamera oCameraUtility_StartEventCamera = NULL;
+void hkCameraUtility_StartEventCamera(Camera* _cam, bool _cameraInterp, MethodInfo* method) {
+	if (disableCameraEvent) return;
+	return oCameraUtility_StartEventCamera(_cam, _cameraInterp, method);
+}
+
 DWORD WINAPI HookThread(LPVOID lpReserved)
 {
 	MH_Initialize();
 
 	MH_CreateHook(GameMain_Update, &hkGameMain_Update, (void**)&oGameMain_Update);
 	MH_CreateHook(CharacterBehaviour_IsDash, &hkCharacterBehaviour_IsDash, (void**)&oCharacterBehaviour_IsDash);
+	MH_CreateHook(CameraUtility_StartEventCamera, &hkCameraUtility_StartEventCamera, (void**)&oCameraUtility_StartEventCamera);
 
 	MH_EnableHook(MH_ALL_HOOKS);
 
