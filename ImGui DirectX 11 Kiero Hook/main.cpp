@@ -115,18 +115,18 @@ DWORD WINAPI CheatMenuThread(LPVOID lpReserved)
 	return TRUE;
 }
 
-// GameManager_Update hook
-typedef void(__stdcall* oGameManagerUpdate)(GameManager*, TimeData*, MethodInfo*);
-static oGameManagerUpdate oGameManager_Update = NULL;
-GameManager* gameManager = nullptr;
-void hkGameManager_Update(GameManager* __this, TimeData* _timeData, MethodInfo* method) {
+// GameMain_Update hook
+typedef void(__stdcall* oGameMainUpdate)(GameMain*, MethodInfo*);
+static oGameMainUpdate oGameMain_Update = NULL;
+GameMain* gameMain = nullptr;
+void hkGameMain_Update(GameMain* __this, MethodInfo* method) {
 	if (__this) {
-		gameManager = __this;
+		gameMain = __this;
 	}
 	else {
-		gameManager = nullptr;
+		gameMain = nullptr;
 	}
-	return oGameManager_Update(__this, _timeData, method);
+	return oGameMain_Update(__this, method);
 }
 
 // CharacterBehaviour_IsDash hook
@@ -141,7 +141,7 @@ DWORD WINAPI HookThread(LPVOID lpReserved)
 {
 	MH_Initialize();
 
-	MH_CreateHook(GameManager_Update, &hkGameManager_Update, (void**)&oGameManager_Update);
+	MH_CreateHook(GameMain_Update, &hkGameMain_Update, (void**)&oGameMain_Update);
 	MH_CreateHook(CharacterBehaviour_IsDash, &hkCharacterBehaviour_IsDash, (void**)&oCharacterBehaviour_IsDash);
 
 	MH_EnableHook(MH_ALL_HOOKS);
@@ -160,6 +160,9 @@ DWORD WINAPI CheatThread(LPVOID lpReserved)
 	while (isRunning)
 	{
 		Sleep(10);
+		if (gameMain == nullptr) continue;
+
+		GameManager* gameManager = gameMain->fields.mGameManager;
 		if (gameManager == nullptr) continue;
 
 		PlayerController* playerController = gameManager->fields.mPlayerCtrl;
@@ -173,6 +176,12 @@ DWORD WINAPI CheatThread(LPVOID lpReserved)
 
 		CharacterBehaviour* characterBehaviour = battleCharaData->fields.Character;
 		if (characterBehaviour == nullptr) continue;
+
+		GameStatus* gameStatus = GameMain_GetGameStatus(gameMain, nullptr);
+		if (gameStatus == nullptr) continue;
+
+		BattleDataStatus battleDataStatus = gameStatus->fields.BtlDataStatus;
+		//if (battleDataStatus == nullptr) continue;
 
 		// godMode
 		BattleCharaData_SetNoHit(battleCharaData, godMode, nullptr);
@@ -195,9 +204,11 @@ DWORD WINAPI CheatThread(LPVOID lpReserved)
 
 		// infiniteGold
 		if (infiniteGold) {
-			system("cls");
-			//std::cout << "mViewGold: " << goldView->fields.mGold.current << std::endl;
+			int* gold = (int*)(reinterpret_cast<char*>(gameStatus) + 0x1D0 + 0x18);
+			*gold = 9999;
 		}
+
+		//system("cls");
 	}
 
 	return TRUE;
