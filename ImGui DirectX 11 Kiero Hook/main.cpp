@@ -180,9 +180,6 @@ DWORD WINAPI CheatThread(LPVOID lpReserved)
 		GameStatus* gameStatus = GameMain_GetGameStatus(gameMain, nullptr);
 		if (gameStatus == nullptr) continue;
 
-		BattleDataStatus battleDataStatus = gameStatus->fields.BtlDataStatus;
-		//if (battleDataStatus == nullptr) continue;
-
 		// godMode
 		BattleCharaData_SetNoHit(battleCharaData, godMode, nullptr);
 
