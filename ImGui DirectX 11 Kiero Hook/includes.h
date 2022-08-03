@@ -100,13 +100,17 @@ void MemNopEx(BYTE* dst, unsigned int size, HANDLE hProcess)
 	delete[] nopArray;
 }
 
-uintptr_t MemFindDMAAddy(uintptr_t ptr, std::vector<unsigned int> offsets)
+uintptr_t* MemFindDMAAddy(uintptr_t* ptr, std::vector<unsigned int> offsets)
 {
-	uintptr_t addr = ptr;
+	if (ptr == nullptr) return nullptr;
+
+	uintptr_t* addr = ptr;
 	for (unsigned int i = 0; i < offsets.size(); ++i)
 	{
-		addr = *(uintptr_t*)addr;
-		addr += offsets[i];
+		addr = (uintptr_t*)*addr;
+		if (addr == nullptr) return nullptr;
+
+		addr = reinterpret_cast<uintptr_t*>(reinterpret_cast<char*>(addr) + offsets[i]);
 	}
 	return addr;
 }

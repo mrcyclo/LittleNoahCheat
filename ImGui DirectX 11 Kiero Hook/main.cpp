@@ -15,6 +15,8 @@ ID3D11RenderTargetView* mainRenderTargetView;
 bool isRunning = true;
 bool isShowMenu = true;
 
+bool godMode = false;
+
 uintptr_t* gameMain = nullptr;
 
 void InitImGui()
@@ -72,6 +74,8 @@ HRESULT __stdcall hkPresent(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT 
 		else {
 			ImGui::Text("GameMain: Not Found");
 		}
+
+		ImGui::Checkbox("God Mode", &godMode);
 
 		ImGui::End();
 	}
@@ -136,9 +140,21 @@ DWORD WINAPI MainCheatThread(LPVOID lpReserved)
 
 		if (gameMain == nullptr) continue;
 
-		uintptr_t rootPtr = (uintptr_t)&gameMain;
-		uintptr_t gameManager = MemFindDMAAddy(rootPtr, { 0x18 });
-		bool* gameManager_mStarted = (bool*)MemFindDMAAddy(gameManager, { 0x199 });
+		uintptr_t* rootPtr = (uintptr_t*)&gameMain;
+		uintptr_t* gameManager = MemFindDMAAddy(rootPtr, { 0x18 });
+		if (gameManager == nullptr) continue;
+
+		uintptr_t* playerController = MemFindDMAAddy(gameManager, { 0x40 });
+		if (playerController == nullptr) continue;
+
+		uintptr_t* battleCharaData = MemFindDMAAddy(playerController, { 0x18 });
+		if (battleCharaData == nullptr) continue;
+
+		// godMode
+		bool* battleCharaData_bNoHit = (bool*)MemFindDMAAddy(battleCharaData, { 0x1D9 });
+		if (battleCharaData_bNoHit != nullptr) {
+			*battleCharaData_bNoHit = godMode;
+		}
 	}
 
 	return TRUE;
