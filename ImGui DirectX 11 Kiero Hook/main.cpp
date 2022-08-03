@@ -128,6 +128,22 @@ DWORD WINAPI InitCheatThread(LPVOID lpReserved)
 	return TRUE;
 }
 
+DWORD WINAPI MainCheatThread(LPVOID lpReserved)
+{
+	while (isRunning)
+	{
+		Sleep(250);
+
+		if (gameMain == nullptr) continue;
+
+		uintptr_t rootPtr = (uintptr_t)&gameMain;
+		uintptr_t gameManager = MemFindDMAAddy(rootPtr, { 0x18 });
+		bool* gameManager_mStarted = (bool*)MemFindDMAAddy(gameManager, { 0x199 });
+	}
+
+	return TRUE;
+}
+
 DWORD WINAPI MainThread(LPVOID lpReserved)
 {
 	bool init_hook = false;
@@ -152,6 +168,7 @@ BOOL WINAPI DllMain(HMODULE hMod, DWORD dwReason, LPVOID lpReserved)
 		CreateThread(nullptr, 0, MainThread, hMod, 0, nullptr);
 		CreateThread(nullptr, 0, HotKeyThread, hMod, 0, nullptr);
 		CreateThread(nullptr, 0, InitCheatThread, hMod, 0, nullptr);
+		CreateThread(nullptr, 0, MainCheatThread, hMod, 0, nullptr);
 		break;
 	case DLL_PROCESS_DETACH:
 		isRunning = false;
