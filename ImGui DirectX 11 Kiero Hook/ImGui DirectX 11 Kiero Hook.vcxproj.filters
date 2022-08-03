@@ -19,15 +19,6 @@
     <Filter Include="imgui">
       <UniqueIdentifier>{3ba57e14-8ac2-485a-b12c-f06690c43d6e}</UniqueIdentifier>
     </Filter>
-    <Filter Include="il2cpp">
-      <UniqueIdentifier>{b1cab485-f9ab-4be8-b905-e63d78534927}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="il2cpp\appdata">
-      <UniqueIdentifier>{cc454ff1-a87e-42fa-bcbe-6672412e49cd}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="il2cpp\framework">
-      <UniqueIdentifier>{480ef0c4-fe36-4757-b672-5f8a6473acb7}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="kiero\minhook\src\buffer.c">
@@ -68,15 +59,6 @@
     </ClCompile>
     <ClCompile Include="imgui\imgui_widgets.cpp">
       <Filter>imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="il2cpp\framework\pch-il2cpp.cpp">
-      <Filter>il2cpp\framework</Filter>
-    </ClCompile>
-    <ClCompile Include="il2cpp\framework\helpers.cpp">
-      <Filter>il2cpp\framework</Filter>
-    </ClCompile>
-    <ClCompile Include="il2cpp\framework\il2cpp-init.cpp">
-      <Filter>il2cpp\framework</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -139,41 +121,10 @@
     <ClInclude Include="includes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="il2cpp\appdata\il2cpp-metadata-version.h">
-      <Filter>il2cpp\appdata</Filter>
-    </ClInclude>
-    <ClInclude Include="il2cpp\appdata\il2cpp-types.h">
-      <Filter>il2cpp\appdata</Filter>
-    </ClInclude>
-    <ClInclude Include="il2cpp\appdata\il2cpp-types-ptr.h">
-      <Filter>il2cpp\appdata</Filter>
-    </ClInclude>
-    <ClInclude Include="il2cpp\appdata\il2cpp-api-functions.h">
-      <Filter>il2cpp\appdata</Filter>
-    </ClInclude>
-    <ClInclude Include="il2cpp\appdata\il2cpp-api-functions-ptr.h">
-      <Filter>il2cpp\appdata</Filter>
-    </ClInclude>
-    <ClInclude Include="il2cpp\appdata\il2cpp-functions.h">
-      <Filter>il2cpp\appdata</Filter>
-    </ClInclude>
-    <ClInclude Include="il2cpp\framework\il2cpp-init.h">
-      <Filter>il2cpp\framework</Filter>
-    </ClInclude>
-    <ClInclude Include="il2cpp\framework\pch-il2cpp.h">
-      <Filter>il2cpp\framework</Filter>
-    </ClInclude>
-    <ClInclude Include="il2cpp\framework\helpers.h">
-      <Filter>il2cpp\framework</Filter>
-    </ClInclude>
-    <ClInclude Include="il2cpp\framework\il2cpp-appdata.h">
-      <Filter>il2cpp\framework</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="kiero\minhook\dll_resources\MinHook.def">
       <Filter>kiero</Filter>
     </None>
-    <None Include="packages.config" />
   </ItemGroup>
 </Project>
