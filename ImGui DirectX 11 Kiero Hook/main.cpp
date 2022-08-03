@@ -90,7 +90,7 @@ HRESULT __stdcall hkPresent(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT 
 		ImGui::Checkbox("Infinite Fever", &infiniteFever);
 		ImGui::Checkbox("Infinite Jump", &infiniteJump);
 		ImGui::Checkbox("Infinite Dash", &infiniteDash);
-		ImGui::Checkbox("Infinite Teleport (LT)", &infiniteTeleport);
+		ImGui::Checkbox("Infinite Thrust", &infiniteTeleport);
 		ImGui::SliderFloat("Speed", &moveSpeed, 1, 5);
 		ImGui::Checkbox("Disable Camera Event", &disableCameraEvent);
 		ImGui::Checkbox("One Hit", &oneHit);
