@@ -93,7 +93,7 @@ DWORD WINAPI HotKeyThread(LPVOID lpReserved)
 DWORD WINAPI InitCheatThread(LPVOID lpReserved)
 {
 	HMODULE hModule = GetModuleHandle("GameAssembly.dll");
-	PTR address = (PTR)ScanPattern(hModule, "\x48\x8B\x4B\x18\x48\x85\xC9\x0F\x84\x81\x01\x00\x00\x45", "xxxxxxxxxxxxxx");
+	uintptr_t address = (uintptr_t)ScanPattern(hModule, "\x48\x8B\x4B\x18\x48\x85\xC9\x0F\x84\x81\x01\x00\x00\x45", "xxxxxxxxxxxxxx");
 
 	return TRUE;
 }
