@@ -1,5 +1,8 @@
 #include "includes.h"
 #include <iostream>
+#include "kiero/minhook/include/MinHook.h"
+#include <fmt/core.h>
+#include <fmt/format.h>
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 Present oPresent;
@@ -11,6 +14,8 @@ ID3D11RenderTargetView* mainRenderTargetView;
 
 bool isRunning = true;
 bool isShowMenu = true;
+
+uintptr_t* gameMain = nullptr;
 
 void InitImGui()
 {
@@ -60,6 +65,14 @@ HRESULT __stdcall hkPresent(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT 
 
 	if (isShowMenu) {
 		ImGui::Begin("ImGui Window");
+
+		if (gameMain != nullptr) {
+			ImGui::Text(fmt::format("GameMain: {}", fmt::ptr(gameMain)).c_str());
+		}
+		else {
+			ImGui::Text("GameMain: Not Found");
+		}
+
 		ImGui::End();
 	}
 
@@ -90,10 +103,29 @@ DWORD WINAPI HotKeyThread(LPVOID lpReserved)
 	return TRUE;
 }
 
+// GameMain_Update hook
+typedef void(__stdcall* tGameMain_Update)(uintptr_t*, uintptr_t*);
+static tGameMain_Update oGameMain_Update = NULL;
+void hkGameMain_Update(uintptr_t* __this, uintptr_t* method) {
+	gameMain = __this;
+	return oGameMain_Update(__this, method);
+}
+
 DWORD WINAPI InitCheatThread(LPVOID lpReserved)
 {
 	HMODULE hModule = GetModuleHandle("GameAssembly.dll");
-	uintptr_t address = (uintptr_t)ScanPattern(hModule, "\x48\x8B\x4B\x18\x48\x85\xC9\x0F\x84\x81\x01\x00\x00\x45", "xxxxxxxxxxxxxx");
+	uintptr_t address = (uintptr_t)ScanPattern(hModule, "\x40\x53\x48\x83\xEC\x20\x80\x3D\xD1\xAB\x62\x01\x00", "xxxxxxxxxxxxx");
+
+	MH_Initialize();
+
+	MH_CreateHook(reinterpret_cast<void*>(address), &hkGameMain_Update, (void**)&oGameMain_Update);
+
+	MH_EnableHook(MH_ALL_HOOKS);
+
+	while (isRunning) Sleep(1000);
+
+	MH_DisableHook(MH_ALL_HOOKS);
+	MH_Uninitialize();
 
 	return TRUE;
 }
