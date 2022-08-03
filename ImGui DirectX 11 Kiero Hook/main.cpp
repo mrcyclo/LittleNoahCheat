@@ -2,6 +2,8 @@
 #include "includes.h"
 #include "kiero/minhook/include/MinHook.h"
 #include <iostream>
+#include <fmt/core.h>
+#include <fmt/format.h>
 
 using namespace app;
 
@@ -25,14 +27,21 @@ bool autoGuard = false;
 bool infiniteFever = false;
 bool infiniteJump = false;
 bool infiniteDash = false;
-float moveSpeed = 1;
 bool infiniteGold = false;
 bool disableCameraEvent = false;
 bool oneHit = false;
 bool infiniteKey = false;
 bool infiniteTeleport = false;
 
-BattleCharaParameter* playerBattleCharaParameter = nullptr;
+GameMain* gameMain = nullptr;
+GameManager* gameManager = nullptr;
+PlayerController* playerController = nullptr;
+PlayerCharaData* playerCharaData = nullptr;
+BattleCharaData* battleCharaData = nullptr;
+CharacterBehaviour* characterBehaviour = nullptr;
+GameStatus* gameStatus = nullptr;
+BattleCharaParameter* battleCharaParameter = nullptr;
+
 
 void InitImGui()
 {
@@ -81,7 +90,7 @@ HRESULT __stdcall hkPresent(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT 
 	ImGui::NewFrame();
 
 	if (isShowMenu) {
-		ImGui::Begin("ImGui Window");
+		ImGui::Begin("Internal cheats by mrcyclo");
 
 		ImGui::Checkbox("God Mode", &godMode);
 		ImGui::Checkbox("Auto Guard", &autoGuard);
@@ -91,7 +100,6 @@ HRESULT __stdcall hkPresent(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT 
 		ImGui::Checkbox("Infinite Jump", &infiniteJump);
 		ImGui::Checkbox("Infinite Dash", &infiniteDash);
 		ImGui::Checkbox("Infinite Thrust", &infiniteTeleport);
-		ImGui::SliderFloat("Speed", &moveSpeed, 1, 5);
 		ImGui::Checkbox("Disable Camera Event", &disableCameraEvent);
 		ImGui::Checkbox("One Hit", &oneHit);
 
@@ -128,7 +136,6 @@ DWORD WINAPI CheatMenuThread(LPVOID lpReserved)
 // GameMain_Update hook
 typedef void(__stdcall* oGameMainUpdate)(GameMain*, MethodInfo*);
 static oGameMainUpdate oGameMain_Update = NULL;
-GameMain* gameMain = nullptr;
 void hkGameMain_Update(GameMain* __this, MethodInfo* method) {
 	if (__this) {
 		gameMain = __this;
@@ -159,7 +166,7 @@ void hkCameraUtility_StartEventCamera(Camera* _cam, bool _cameraInterp, MethodIn
 typedef void(__stdcall* oBattleCharaParameterDamageHp)(BattleCharaParameter*, int32_t, MethodInfo*);
 static oBattleCharaParameterDamageHp oBattleCharaParameter_DamageHp = NULL;
 void hkBattleCharaParameter_DamageHp(BattleCharaParameter* __this, int32_t _val, MethodInfo* method) {
-	if (oneHit && playerBattleCharaParameter != nullptr && __this != playerBattleCharaParameter) {
+	if (oneHit && battleCharaParameter != nullptr && __this != battleCharaParameter) {
 		_val = INT_MAX;
 	}
 
@@ -193,26 +200,26 @@ DWORD WINAPI CheatThread(LPVOID lpReserved)
 		Sleep(10);
 		if (gameMain == nullptr) continue;
 
-		GameManager* gameManager = gameMain->fields.mGameManager;
+		gameManager = gameMain->fields.mGameManager;
 		if (gameManager == nullptr) continue;
 
-		PlayerController* playerController = gameManager->fields.mPlayerCtrl;
+		playerController = gameManager->fields.mPlayerCtrl;
 		if (playerController == nullptr) continue;
 
-		PlayerCharaData* playerCharaData = gameManager->fields.mPlayerCharaData;
+		playerCharaData = gameManager->fields.mPlayerCharaData;
 		if (playerCharaData == nullptr) continue;
 
-		BattleCharaData* battleCharaData = playerController->fields.Character;
+		battleCharaData = playerController->fields.Character;
 		if (battleCharaData == nullptr) continue;
 
-		CharacterBehaviour* characterBehaviour = battleCharaData->fields.Character;
+		characterBehaviour = battleCharaData->fields.Character;
 		if (characterBehaviour == nullptr) continue;
 
-		GameStatus* gameStatus = GameMain_GetGameStatus(gameMain, nullptr);
+		gameStatus = GameMain_GetGameStatus(gameMain, nullptr);
 		if (gameStatus == nullptr) continue;
 
-		// Set global variables
-		playerBattleCharaParameter = battleCharaData->fields.Parameter;
+		battleCharaParameter = battleCharaData->fields.Parameter;
+		if (battleCharaParameter == nullptr) continue;
 
 		// godMode
 		BattleCharaData_SetNoHit(battleCharaData, godMode, nullptr);
@@ -229,9 +236,6 @@ DWORD WINAPI CheatThread(LPVOID lpReserved)
 		if (infiniteJump) {
 			characterBehaviour->fields.mAirJumpCnt = 0;
 		}
-
-		// moveSpeed
-		CharacterBehaviour_SetUserMoveSpeed(characterBehaviour, moveSpeed, nullptr);
 
 		// infiniteGold
 		if (infiniteGold) {
