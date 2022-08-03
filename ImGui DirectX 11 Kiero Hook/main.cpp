@@ -98,6 +98,7 @@ DWORD WINAPI HotKeyThread(LPVOID lpReserved)
 		}
 	}
 
+	MH_Uninitialize();
 	kiero::shutdown();
 
 	return TRUE;
@@ -115,17 +116,14 @@ DWORD WINAPI InitCheatThread(LPVOID lpReserved)
 {
 	HMODULE hModule = GetModuleHandle("GameAssembly.dll");
 	uintptr_t address = (uintptr_t)ScanPattern(hModule, "\x40\x53\x48\x83\xEC\x20\x80\x3D\xD1\xAB\x62\x01\x00", "xxxxxxxxxxxxx");
+	LPVOID pTarget = reinterpret_cast<void*>(address);
 
-	MH_Initialize();
+	MH_CreateHook(pTarget, &hkGameMain_Update, (void**)&oGameMain_Update);
+	MH_EnableHook(pTarget);
 
-	MH_CreateHook(reinterpret_cast<void*>(address), &hkGameMain_Update, (void**)&oGameMain_Update);
+	while (isRunning && gameMain == nullptr) Sleep(1000);
 
-	MH_EnableHook(MH_ALL_HOOKS);
-
-	while (isRunning) Sleep(1000);
-
-	MH_DisableHook(MH_ALL_HOOKS);
-	MH_Uninitialize();
+	MH_DisableHook(pTarget);
 
 	return TRUE;
 }
@@ -150,11 +148,14 @@ BOOL WINAPI DllMain(HMODULE hMod, DWORD dwReason, LPVOID lpReserved)
 	{
 	case DLL_PROCESS_ATTACH:
 		DisableThreadLibraryCalls(hMod);
+		MH_Initialize();
 		CreateThread(nullptr, 0, MainThread, hMod, 0, nullptr);
 		CreateThread(nullptr, 0, HotKeyThread, hMod, 0, nullptr);
 		CreateThread(nullptr, 0, InitCheatThread, hMod, 0, nullptr);
 		break;
 	case DLL_PROCESS_DETACH:
+		isRunning = false;
+		MH_Uninitialize();
 		kiero::shutdown();
 		break;
 	}
