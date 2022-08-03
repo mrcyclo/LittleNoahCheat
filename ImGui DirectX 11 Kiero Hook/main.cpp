@@ -30,6 +30,7 @@ bool infiniteGold = false;
 bool disableCameraEvent = false;
 bool oneHit = false;
 bool infiniteKey = false;
+bool infiniteTeleport = false;
 
 BattleCharaParameter* playerBattleCharaParameter = nullptr;
 
@@ -89,6 +90,7 @@ HRESULT __stdcall hkPresent(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT 
 		ImGui::Checkbox("Infinite Fever", &infiniteFever);
 		ImGui::Checkbox("Infinite Jump", &infiniteJump);
 		ImGui::Checkbox("Infinite Dash", &infiniteDash);
+		ImGui::Checkbox("Infinite Teleport (LT)", &infiniteTeleport);
 		ImGui::SliderFloat("Speed", &moveSpeed, 1, 5);
 		ImGui::Checkbox("Disable Camera Event", &disableCameraEvent);
 		ImGui::Checkbox("One Hit", &oneHit);
@@ -241,6 +243,11 @@ DWORD WINAPI CheatThread(LPVOID lpReserved)
 		if (infiniteKey) {
 			int* keyNum = (int*)(reinterpret_cast<char*>(gameStatus) + 0x1D0 + 0x1C);
 			*keyNum = 99;
+		}
+
+		// infiniteTeleport
+		if (infiniteTeleport) {
+			playerCharaData->fields.TelepNum = playerCharaData->fields.TelepNumMax;
 		}
 
 		//system("cls");
