@@ -15,6 +15,8 @@ ID3D11RenderTargetView* mainRenderTargetView;
 bool isRunning = true;
 bool isShowMenu = true;
 
+uintptr_t* gameMain = nullptr;
+
 bool godMode = false;
 bool autoGuard = false;
 bool infiniteHp = false;
@@ -33,7 +35,8 @@ float jumpSpeedValue = 1.7;
 
 bool disableEventCamera = false;
 
-uintptr_t* gameMain = nullptr;
+bool oneHit = false;
+uintptr_t* currentPlayerBattleCharaParameter = nullptr;
 
 void InitImGui()
 {
@@ -82,14 +85,10 @@ HRESULT __stdcall hkPresent(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT 
 	ImGui::NewFrame();
 
 	if (isShowMenu) {
-		ImGui::Begin("ImGui Window");
+		ImGui::Begin("Trainer made by mrcyclo");
 
-		if (gameMain != nullptr) {
-			ImGui::Text(fmt::format("GameMain: {}", fmt::ptr(gameMain)).c_str());
-		}
-		else {
-			ImGui::Text("GameMain: Not Found");
-		}
+		//ImGui::Text(fmt::format("currentPlayerBattleCharaParameter: {}", fmt::ptr(currentPlayerBattleCharaParameter)).c_str());
+		//ImGui::Text(fmt::format("        debugBattleCharaParameter: {}", fmt::ptr(debugBattleCharaParameter)).c_str());
 
 		ImGui::Checkbox("God Mode", &godMode);
 		ImGui::Checkbox("Auto Guard", &autoGuard);
@@ -114,6 +113,7 @@ HRESULT __stdcall hkPresent(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT 
 		}
 
 		ImGui::Checkbox("Disable Event Camera", &disableEventCamera);
+		ImGui::Checkbox("One Hit One Kill", &oneHit);
 
 		ImGui::End();
 	}
@@ -162,6 +162,18 @@ void hkCameraUtility_StartEventCamera(uintptr_t* _cam, bool _cameraInterp, uintp
 	return oCameraUtility_StartEventCamera(_cam, _cameraInterp, method);
 }
 
+// BattleCharaParameter_DamageHp hook
+typedef void(__stdcall* tBattleCharaParameter_DamageHp)(uintptr_t*, int32_t _val, uintptr_t*);
+static tBattleCharaParameter_DamageHp oBattleCharaParameter_DamageHp = NULL;
+void hkBattleCharaParameter_DamageHp(uintptr_t* __this, int32_t _val, uintptr_t* method) {
+	if (oneHit) {
+		if (__this != currentPlayerBattleCharaParameter) {
+			_val = INT_MAX;
+		}
+	}
+	return oBattleCharaParameter_DamageHp(__this, _val, method);
+}
+
 DWORD WINAPI InitCheatThread(LPVOID lpReserved)
 {
 	HMODULE hModule = GetModuleHandle("GameAssembly.dll");
@@ -172,14 +184,20 @@ DWORD WINAPI InitCheatThread(LPVOID lpReserved)
 	LPVOID GameMain_Update_Target = reinterpret_cast<void*>(address);
 	MH_CreateHook(GameMain_Update_Target, &hkGameMain_Update, (void**)&oGameMain_Update);
 
-	// CameraUtility_StartEventCamera searching
+	// CameraUtility_StartEventCamera hooking
 	address = (uintptr_t)ScanPattern(hModule, "\x48\x89\x5C\x24\x08\x48\x89\x74\x24\x10\x57\x48\x83\xEC\x20\x80\x3D\x38\xA2\x36\x01\x00", "xxxxxxxxxxxxxxxxxxxxxx");
 	LPVOID CameraUtility_StartEventCamera_Target = reinterpret_cast<void*>(address);
 	MH_CreateHook(CameraUtility_StartEventCamera_Target, &hkCameraUtility_StartEventCamera, (void**)&oCameraUtility_StartEventCamera);
 
+	// BattleCharaParameter_DamageHp hooking
+	address = (uintptr_t)ScanPattern(hModule, "\x29\x91\x64\x04\x00\x00", "xxxxxx");
+	LPVOID BattleCharaParameter_DamageHp_Target = reinterpret_cast<void*>(address);
+	MH_CreateHook(BattleCharaParameter_DamageHp_Target, &hkBattleCharaParameter_DamageHp, (void**)&oBattleCharaParameter_DamageHp);
+
 	// Enable hooks
 	MH_EnableHook(GameMain_Update_Target);
 	MH_EnableHook(CameraUtility_StartEventCamera_Target);
+	MH_EnableHook(BattleCharaParameter_DamageHp_Target);
 
 	// Wait to trainer exit
 	while (isRunning) Sleep(1000);
@@ -187,6 +205,7 @@ DWORD WINAPI InitCheatThread(LPVOID lpReserved)
 	// Disable hooks
 	MH_DisableHook(GameMain_Update_Target);
 	MH_DisableHook(CameraUtility_StartEventCamera_Target);
+	MH_DisableHook(BattleCharaParameter_DamageHp_Target);
 
 	return TRUE;
 }
@@ -221,6 +240,9 @@ DWORD WINAPI MainCheatThread(LPVOID lpReserved)
 
 		uintptr_t* gameStatus = MemFindDMAAddy(rootPtr, { 0x38 });
 		if (gameStatus == nullptr) continue;
+
+		// Store for one hit
+		currentPlayerBattleCharaParameter = (uintptr_t*)*battleCharaParameter;
 
 		// godMode
 		bool* battleCharaData_bNoHit = (bool*)MemFindDMAAddy(battleCharaData, { 0x1D9 });
