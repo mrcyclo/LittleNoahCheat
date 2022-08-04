@@ -20,6 +20,7 @@ bool autoGuard = false;
 bool infiniteHp = false;
 bool infiniteFever = false;
 bool infiniteThurst = false;
+bool infiniteJump = false;
 
 uintptr_t* gameMain = nullptr;
 
@@ -84,6 +85,7 @@ HRESULT __stdcall hkPresent(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT 
 		ImGui::Checkbox("Infinite HP", &infiniteHp);
 		ImGui::Checkbox("Infinite Fever", &infiniteFever);
 		ImGui::Checkbox("Infinite Thurst", &infiniteThurst);
+		ImGui::Checkbox("Infinite Jump", &infiniteJump);
 
 		ImGui::End();
 	}
@@ -165,6 +167,9 @@ DWORD WINAPI MainCheatThread(LPVOID lpReserved)
 		uintptr_t* playerCharaData = MemFindDMAAddy(gameManager, { 0x48 });
 		if (playerCharaData == nullptr) continue;
 
+		uintptr_t* characterBehaviour = MemFindDMAAddy(battleCharaData, { 0x20 });
+		if (characterBehaviour == nullptr) continue;
+
 		// godMode
 		bool* battleCharaData_bNoHit = (bool*)MemFindDMAAddy(battleCharaData, { 0x1D9 });
 		if (battleCharaData_bNoHit != nullptr) {
@@ -203,6 +208,14 @@ DWORD WINAPI MainCheatThread(LPVOID lpReserved)
 			int* playerCharaData_TelepNumMax = (int*)MemFindDMAAddy(playerCharaData, { 0x68 });
 			if (playerCharaData_TelepNum != nullptr && playerCharaData_TelepNumMax != nullptr) {
 				*playerCharaData_TelepNum = *playerCharaData_TelepNumMax;
+			}
+		}
+
+		// infiniteJump
+		if (infiniteJump) {
+			int* characterBehaviour_mAirJumpCnt = (int*)MemFindDMAAddy(characterBehaviour, { 0x334 });
+			if (characterBehaviour_mAirJumpCnt != nullptr) {
+				*characterBehaviour_mAirJumpCnt = 0;
 			}
 		}
 	}
