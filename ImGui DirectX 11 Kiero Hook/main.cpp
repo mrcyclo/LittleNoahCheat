@@ -32,6 +32,7 @@ bool disableCameraEvent = false;
 bool oneHit = false;
 bool infiniteKey = false;
 bool infiniteTeleport = false;
+bool autoKill = false;
 
 GameMain* gameMain = nullptr;
 GameManager* gameManager = nullptr;
@@ -102,6 +103,7 @@ HRESULT __stdcall hkPresent(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT 
 		ImGui::Checkbox("Infinite Thrust", &infiniteTeleport);
 		ImGui::Checkbox("Disable Camera Event", &disableCameraEvent);
 		ImGui::Checkbox("One Hit", &oneHit);
+		ImGui::Checkbox("Auto Kill", &autoKill);
 
 		ImGui::End();
 	}
@@ -197,7 +199,7 @@ DWORD WINAPI CheatThread(LPVOID lpReserved)
 {
 	while (isRunning)
 	{
-		Sleep(10);
+		Sleep(100);
 		if (gameMain == nullptr) continue;
 
 		gameManager = gameMain->fields.mGameManager;
@@ -220,6 +222,9 @@ DWORD WINAPI CheatThread(LPVOID lpReserved)
 
 		battleCharaParameter = battleCharaData->fields.Parameter;
 		if (battleCharaParameter == nullptr) continue;
+
+		EnemyController* enemyController = gameManager->fields.mEnemyCtrl;
+		if (enemyController == nullptr) continue;
 
 		// godMode
 		BattleCharaData_SetNoHit(battleCharaData, godMode, nullptr);
@@ -252,6 +257,19 @@ DWORD WINAPI CheatThread(LPVOID lpReserved)
 		// infiniteTeleport
 		if (infiniteTeleport) {
 			playerCharaData->fields.TelepNum = playerCharaData->fields.TelepNumMax;
+		}
+
+		// autoKill
+		if (autoKill) {
+			auto mAiCompornents = enemyController->fields.mAiCompornents;
+			auto items = mAiCompornents->fields._items->vector;
+			for (int i = 0; i < mAiCompornents->fields._size; i++) {
+				auto item = (AiCompornent*)items[i];
+
+				BattleCharaData* data = AiCompornent_GetCharaData(item, nullptr);
+				BattleCharaParameter* parameter = data->fields.Parameter;
+				BattleCharaParameter_DamageHp(parameter, INT_MAX, nullptr);
+			}
 		}
 
 		//system("cls");
@@ -289,6 +307,7 @@ BOOL WINAPI DllMain(HMODULE hMod, DWORD dwReason, LPVOID lpReserved)
 
 		// If you would like to output to a new console window, use il2cppi_new_console() to open one and redirect stdout
 		//il2cppi_new_console();
+		il2cppi_new_console();
 
 		CreateThread(nullptr, 0, MainThread, hMod, 0, nullptr);
 
