@@ -18,6 +18,7 @@ bool isShowMenu = true;
 bool godMode = false;
 bool autoGuard = false;
 bool infiniteHp = false;
+bool infiniteFever = false;
 
 uintptr_t* gameMain = nullptr;
 
@@ -80,6 +81,7 @@ HRESULT __stdcall hkPresent(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT 
 		ImGui::Checkbox("God Mode", &godMode);
 		ImGui::Checkbox("Auto Guard", &autoGuard);
 		ImGui::Checkbox("Infinite HP", &infiniteHp);
+		ImGui::Checkbox("Infinite Fever", &infiniteFever);
 
 		ImGui::End();
 	}
@@ -145,6 +147,7 @@ DWORD WINAPI MainCheatThread(LPVOID lpReserved)
 		if (gameMain == nullptr) continue;
 
 		uintptr_t* rootPtr = (uintptr_t*)&gameMain;
+
 		uintptr_t* gameManager = MemFindDMAAddy(rootPtr, { 0x18 });
 		if (gameManager == nullptr) continue;
 
@@ -156,6 +159,9 @@ DWORD WINAPI MainCheatThread(LPVOID lpReserved)
 
 		uintptr_t* battleCharaParameter = MemFindDMAAddy(battleCharaData, { 0x28 });
 		if (battleCharaParameter == nullptr) continue;
+
+		uintptr_t* playerCharaData = MemFindDMAAddy(gameManager, { 0x48 });
+		if (playerCharaData == nullptr) continue;
 
 		// godMode
 		bool* battleCharaData_bNoHit = (bool*)MemFindDMAAddy(battleCharaData, { 0x1D9 });
@@ -175,6 +181,17 @@ DWORD WINAPI MainCheatThread(LPVOID lpReserved)
 			int* battleCharaParameter_CharaStatus_Hp = (int*)MemFindDMAAddy(battleCharaParameter, { 0x238 + 0x0 });
 			if (battleCharaParameter_mHp != nullptr && battleCharaParameter_CharaStatus_Hp != nullptr) {
 				*battleCharaParameter_mHp = *battleCharaParameter_CharaStatus_Hp;
+			}
+		}
+
+		// infiniteFever
+		if (infiniteFever) {
+			//float* playerCharaData_FeverGauge = (float*)MemFindDMAAddy(playerCharaData, { 0x54 });
+			//float* playerCharaData_FeverGaugeMax = (float*)MemFindDMAAddy(playerCharaData, { 0x58 });
+			int* playerCharaData_FeverGaugeStockNum = (int*)MemFindDMAAddy(playerCharaData, { 0x5C });
+			int* playerCharaData_FeverGaugeStockNumMax = (int*)MemFindDMAAddy(playerCharaData, { 0x60 });
+			if (playerCharaData_FeverGaugeStockNum != nullptr && playerCharaData_FeverGaugeStockNumMax != nullptr) {
+				*playerCharaData_FeverGaugeStockNum = *playerCharaData_FeverGaugeStockNumMax;
 			}
 		}
 	}
