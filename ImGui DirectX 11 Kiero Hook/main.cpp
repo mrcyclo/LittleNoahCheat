@@ -28,6 +28,9 @@ bool infinitePotion = false;
 bool runSpeed = false;
 float runSpeedValue = 4;
 
+bool jumpSpeed = false;
+float jumpSpeedValue = 1.7;
+
 uintptr_t* gameMain = nullptr;
 
 void InitImGui()
@@ -100,6 +103,12 @@ HRESULT __stdcall hkPresent(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT 
 		if (runSpeed) {
 			ImGui::SameLine();
 			ImGui::SliderFloat("", &runSpeedValue, 4, 20);
+		}
+
+		ImGui::Checkbox("Jump Speed", &jumpSpeed);
+		if (jumpSpeed) {
+			ImGui::SameLine();
+			ImGui::SliderFloat("", &jumpSpeedValue, 1, 5);
 		}
 
 		ImGui::End();
@@ -267,6 +276,14 @@ DWORD WINAPI MainCheatThread(LPVOID lpReserved)
 			float* characterBehaviour_RunSpeed = (float*)MemFindDMAAddy(characterBehaviour, { 0x5C });
 			if (characterBehaviour_RunSpeed != nullptr) {
 				*characterBehaviour_RunSpeed = runSpeedValue;
+			}
+		}
+
+		// jumpSpeed
+		if (jumpSpeed) {
+			float* characterBehaviour_JumpValue = (float*)MemFindDMAAddy(characterBehaviour, { 0x60 });
+			if (characterBehaviour_JumpValue != nullptr) {
+				*characterBehaviour_JumpValue = jumpSpeedValue;
 			}
 		}
 
