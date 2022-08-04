@@ -100,6 +100,20 @@ void MemNopEx(BYTE* dst, unsigned int size, HANDLE hProcess)
 	delete[] nopArray;
 }
 
+bool IsBadReadPtr(void* p)
+{
+	MEMORY_BASIC_INFORMATION mbi = { 0 };
+	if (VirtualQuery(p, &mbi, sizeof(mbi)))
+	{
+		DWORD mask = (PAGE_READONLY | PAGE_READWRITE | PAGE_WRITECOPY | PAGE_EXECUTE_READ | PAGE_EXECUTE_READWRITE | PAGE_EXECUTE_WRITECOPY);
+		bool b = !(mbi.Protect & mask);
+		// check the page is not a guard page
+		if (mbi.Protect & (PAGE_GUARD | PAGE_NOACCESS)) b = true;
+		return b;
+	}
+	return true;
+}
+
 uintptr_t* MemFindDMAAddy(uintptr_t* ptr, std::vector<unsigned int> offsets)
 {
 	if (ptr == nullptr) return nullptr;
@@ -109,8 +123,10 @@ uintptr_t* MemFindDMAAddy(uintptr_t* ptr, std::vector<unsigned int> offsets)
 	{
 		addr = (uintptr_t*)*addr;
 		if (addr == nullptr) return nullptr;
+		if (IsBadReadPtr(addr)) return nullptr;
 
 		addr = reinterpret_cast<uintptr_t*>(reinterpret_cast<char*>(addr) + offsets[i]);
+		if (IsBadReadPtr(addr)) return nullptr;
 	}
 	return addr;
 }

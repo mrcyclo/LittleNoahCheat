@@ -38,6 +38,8 @@ bool disableEventCamera = false;
 bool oneHit = false;
 uintptr_t* currentPlayerBattleCharaParameter = nullptr;
 
+bool autoKill = false;
+
 void InitImGui()
 {
 	ImGui::CreateContext();
@@ -103,17 +105,18 @@ HRESULT __stdcall hkPresent(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT 
 		ImGui::Checkbox("Run Speed", &runSpeed);
 		if (runSpeed) {
 			ImGui::SameLine();
-			ImGui::SliderFloat("", &runSpeedValue, 4, 20);
+			ImGui::SliderFloat("Run Speed", &runSpeedValue, 4, 20);
 		}
 
 		ImGui::Checkbox("Jump Speed", &jumpSpeed);
 		if (jumpSpeed) {
 			ImGui::SameLine();
-			ImGui::SliderFloat("", &jumpSpeedValue, 1, 5);
+			ImGui::SliderFloat("Jump Speed", &jumpSpeedValue, 1, 5);
 		}
 
 		ImGui::Checkbox("Disable Event Camera", &disableEventCamera);
 		ImGui::Checkbox("One Hit One Kill", &oneHit);
+		ImGui::Checkbox("Auto Kill All Mobs", &autoKill);
 
 		ImGui::End();
 	}
@@ -241,6 +244,9 @@ DWORD WINAPI MainCheatThread(LPVOID lpReserved)
 		uintptr_t* gameStatus = MemFindDMAAddy(rootPtr, { 0x38 });
 		if (gameStatus == nullptr) continue;
 
+		uintptr_t* enemyController = MemFindDMAAddy(gameManager, { 0xA8 });
+		if (enemyController == nullptr) continue;
+
 		// Store for one hit
 		currentPlayerBattleCharaParameter = (uintptr_t*)*battleCharaParameter;
 
@@ -331,6 +337,49 @@ DWORD WINAPI MainCheatThread(LPVOID lpReserved)
 			float* characterBehaviour_JumpValue = (float*)MemFindDMAAddy(characterBehaviour, { 0x60 });
 			if (characterBehaviour_JumpValue != nullptr) {
 				*characterBehaviour_JumpValue = jumpSpeedValue;
+			}
+		}
+
+		// autoKill
+		if (autoKill) {
+			// Pointer to C# List<T>, only for 64-bit maybe
+			uintptr_t* mAiCompornents = MemFindDMAAddy(enemyController, { 0x20 });
+			if (mAiCompornents != nullptr) {
+				int* size = (int*)MemFindDMAAddy(mAiCompornents, { 0x18 });
+				if (*size > 0) {
+					uintptr_t* fields = MemFindDMAAddy(mAiCompornents, { 0x10 });
+					long* max_size = (long*)MemFindDMAAddy(fields, { 0x18 });
+
+					// Loop through all items
+					for (int i = 0; i < *size; i++)
+					{
+						// Check nullptr before do anything
+						uintptr_t* enemy = MemFindDMAAddy(fields, { 0x20 + i * (unsigned int)sizeof(uintptr_t) });
+						if (enemy == nullptr) continue;
+
+						// Now do some magic with item here, ehe
+
+
+						uintptr_t* enemyBattleCharaData = nullptr;
+						uintptr_t* enemyBattleCharaParameter = nullptr;
+
+						// Try to get BattleCharaParameter of AiCompornent first
+						enemyBattleCharaData = MemFindDMAAddy(enemy, { 0x28 });
+						enemyBattleCharaParameter = MemFindDMAAddy(enemyBattleCharaData, { 0x28 });
+
+						// If BattleCharaParameter is nullptr, try to BossAiCompornent
+						if (enemyBattleCharaParameter == nullptr) {
+							enemyBattleCharaData = MemFindDMAAddy(enemy, { 0x20 });
+							enemyBattleCharaParameter = MemFindDMAAddy(enemyBattleCharaData, { 0x28 });
+						}
+
+						// Bad luck
+						if (enemyBattleCharaParameter == nullptr) continue;
+
+						int* enemy_mHp = (int*)MemFindDMAAddy(enemyBattleCharaParameter, { 0x464 });
+						*enemy_mHp = 0;
+					}
+				}
 			}
 		}
 	}
