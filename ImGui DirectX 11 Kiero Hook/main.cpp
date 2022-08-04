@@ -17,6 +17,7 @@ bool isShowMenu = true;
 
 bool godMode = false;
 bool autoGuard = false;
+bool infiniteHp = false;
 
 uintptr_t* gameMain = nullptr;
 
@@ -78,6 +79,7 @@ HRESULT __stdcall hkPresent(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT 
 
 		ImGui::Checkbox("God Mode", &godMode);
 		ImGui::Checkbox("Auto Guard", &autoGuard);
+		ImGui::Checkbox("Infinite HP", &infiniteHp);
 
 		ImGui::End();
 	}
@@ -152,6 +154,9 @@ DWORD WINAPI MainCheatThread(LPVOID lpReserved)
 		uintptr_t* battleCharaData = MemFindDMAAddy(playerController, { 0x18 });
 		if (battleCharaData == nullptr) continue;
 
+		uintptr_t* battleCharaParameter = MemFindDMAAddy(battleCharaData, { 0x28 });
+		if (battleCharaParameter == nullptr) continue;
+
 		// godMode
 		bool* battleCharaData_bNoHit = (bool*)MemFindDMAAddy(battleCharaData, { 0x1D9 });
 		if (battleCharaData_bNoHit != nullptr) {
@@ -162,6 +167,15 @@ DWORD WINAPI MainCheatThread(LPVOID lpReserved)
 		bool* battleCharaData_autoGuard = (bool*)MemFindDMAAddy(battleCharaData, { 0x1D8 });
 		if (battleCharaData_autoGuard != nullptr) {
 			*battleCharaData_autoGuard = autoGuard;
+		}
+
+		// infiniteHp
+		if (infiniteHp) {
+			int* battleCharaParameter_mHp = (int*)MemFindDMAAddy(battleCharaParameter, { 0x464 });
+			int* battleCharaParameter_CharaStatus_Hp = (int*)MemFindDMAAddy(battleCharaParameter, { 0x238 + 0x0 });
+			if (battleCharaParameter_mHp != nullptr && battleCharaParameter_CharaStatus_Hp != nullptr) {
+				*battleCharaParameter_mHp = *battleCharaParameter_CharaStatus_Hp;
+			}
 		}
 	}
 
