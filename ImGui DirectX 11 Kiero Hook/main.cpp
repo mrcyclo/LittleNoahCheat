@@ -23,6 +23,7 @@ bool infiniteThurst = false;
 bool infiniteJump = false;
 bool infiniteKey = false;
 bool infiniteGold = false;
+bool infinitePotion = false;
 
 uintptr_t* gameMain = nullptr;
 
@@ -87,6 +88,7 @@ HRESULT __stdcall hkPresent(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT 
 		ImGui::Checkbox("Infinite HP", &infiniteHp);
 		ImGui::Checkbox("Infinite Key", &infiniteKey);
 		ImGui::Checkbox("Infinite Gold", &infiniteGold);
+		ImGui::Checkbox("Infinite Potion", &infinitePotion);
 		ImGui::Checkbox("Infinite Fever", &infiniteFever);
 		ImGui::Checkbox("Infinite Thurst", &infiniteThurst);
 		ImGui::Checkbox("Infinite Jump", &infiniteJump);
@@ -239,6 +241,15 @@ DWORD WINAPI MainCheatThread(LPVOID lpReserved)
 			int* gameStatus_BattleDataStatus_Gold = (int*)MemFindDMAAddy(gameStatus, { 0x1F8 + 0x18 });
 			if (gameStatus_BattleDataStatus_Gold != nullptr) {
 				*gameStatus_BattleDataStatus_Gold = 9999;
+			}
+		}
+
+		// infinitePotion
+		if (infinitePotion) {
+			int* gameStatus_BattleDataStatus_PotionNum = (int*)MemFindDMAAddy(gameStatus, { 0x1F8 + 0x20 });
+			int* gameStatus_BattleDataStatus_PotionNumMax = (int*)MemFindDMAAddy(gameStatus, { 0x1F8 + 0x24 });
+			if (gameStatus_BattleDataStatus_PotionNum != nullptr && gameStatus_BattleDataStatus_PotionNumMax != nullptr) {
+				*gameStatus_BattleDataStatus_PotionNum = *gameStatus_BattleDataStatus_PotionNumMax;
 			}
 		}
 	}
