@@ -16,6 +16,7 @@ bool isRunning = true;
 bool isShowMenu = true;
 
 bool godMode = false;
+bool autoGuard = false;
 
 uintptr_t* gameMain = nullptr;
 
@@ -76,6 +77,7 @@ HRESULT __stdcall hkPresent(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT 
 		}
 
 		ImGui::Checkbox("God Mode", &godMode);
+		ImGui::Checkbox("Auto Guard", &autoGuard);
 
 		ImGui::End();
 	}
@@ -136,7 +138,7 @@ DWORD WINAPI MainCheatThread(LPVOID lpReserved)
 {
 	while (isRunning)
 	{
-		Sleep(250);
+		Sleep(100);
 
 		if (gameMain == nullptr) continue;
 
@@ -154,6 +156,12 @@ DWORD WINAPI MainCheatThread(LPVOID lpReserved)
 		bool* battleCharaData_bNoHit = (bool*)MemFindDMAAddy(battleCharaData, { 0x1D9 });
 		if (battleCharaData_bNoHit != nullptr) {
 			*battleCharaData_bNoHit = godMode;
+		}
+
+		// autoGuard
+		bool* battleCharaData_autoGuard = (bool*)MemFindDMAAddy(battleCharaData, { 0x1D8 });
+		if (battleCharaData_autoGuard != nullptr) {
+			*battleCharaData_autoGuard = autoGuard;
 		}
 	}
 
