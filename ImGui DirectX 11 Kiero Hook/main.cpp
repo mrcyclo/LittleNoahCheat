@@ -21,6 +21,7 @@ bool infiniteHp = false;
 bool infiniteFever = false;
 bool infiniteThurst = false;
 bool infiniteJump = false;
+bool infiniteKey = false;
 
 uintptr_t* gameMain = nullptr;
 
@@ -83,6 +84,7 @@ HRESULT __stdcall hkPresent(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT 
 		ImGui::Checkbox("God Mode", &godMode);
 		ImGui::Checkbox("Auto Guard", &autoGuard);
 		ImGui::Checkbox("Infinite HP", &infiniteHp);
+		ImGui::Checkbox("Infinite Key", &infiniteKey);
 		ImGui::Checkbox("Infinite Fever", &infiniteFever);
 		ImGui::Checkbox("Infinite Thurst", &infiniteThurst);
 		ImGui::Checkbox("Infinite Jump", &infiniteJump);
@@ -170,6 +172,9 @@ DWORD WINAPI MainCheatThread(LPVOID lpReserved)
 		uintptr_t* characterBehaviour = MemFindDMAAddy(battleCharaData, { 0x20 });
 		if (characterBehaviour == nullptr) continue;
 
+		uintptr_t* gameStatus = MemFindDMAAddy(rootPtr, { 0x38 });
+		if (gameStatus == nullptr) continue;
+
 		// godMode
 		bool* battleCharaData_bNoHit = (bool*)MemFindDMAAddy(battleCharaData, { 0x1D9 });
 		if (battleCharaData_bNoHit != nullptr) {
@@ -216,6 +221,14 @@ DWORD WINAPI MainCheatThread(LPVOID lpReserved)
 			int* characterBehaviour_mAirJumpCnt = (int*)MemFindDMAAddy(characterBehaviour, { 0x334 });
 			if (characterBehaviour_mAirJumpCnt != nullptr) {
 				*characterBehaviour_mAirJumpCnt = 0;
+			}
+		}
+
+		// infiniteKey
+		if (infiniteKey) {
+			int* gameStatus_BattleDataStatus_KeyNum = (int*)MemFindDMAAddy(gameStatus, { 0x1F8 + 0x1C });
+			if (gameStatus_BattleDataStatus_KeyNum != nullptr) {
+				*gameStatus_BattleDataStatus_KeyNum = 99;
 			}
 		}
 	}
