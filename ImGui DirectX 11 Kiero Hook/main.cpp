@@ -25,6 +25,9 @@ bool infiniteKey = false;
 bool infiniteGold = false;
 bool infinitePotion = false;
 
+bool runSpeed = false;
+float runSpeedValue = 4;
+
 uintptr_t* gameMain = nullptr;
 
 void InitImGui()
@@ -92,6 +95,12 @@ HRESULT __stdcall hkPresent(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT 
 		ImGui::Checkbox("Infinite Fever", &infiniteFever);
 		ImGui::Checkbox("Infinite Thurst", &infiniteThurst);
 		ImGui::Checkbox("Infinite Jump", &infiniteJump);
+
+		ImGui::Checkbox("Run Speed", &runSpeed);
+		if (runSpeed) {
+			ImGui::SameLine();
+			ImGui::SliderFloat("", &runSpeedValue, 4, 20);
+		}
 
 		ImGui::End();
 	}
@@ -252,6 +261,15 @@ DWORD WINAPI MainCheatThread(LPVOID lpReserved)
 				*gameStatus_BattleDataStatus_PotionNum = *gameStatus_BattleDataStatus_PotionNumMax;
 			}
 		}
+
+		// runSpeed
+		if (runSpeed) {
+			float* characterBehaviour_RunSpeed = (float*)MemFindDMAAddy(characterBehaviour, { 0x5C });
+			if (characterBehaviour_RunSpeed != nullptr) {
+				*characterBehaviour_RunSpeed = runSpeedValue;
+			}
+		}
+
 	}
 
 	return TRUE;
