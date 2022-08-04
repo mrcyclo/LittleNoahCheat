@@ -155,11 +155,11 @@ void hkGameMain_Update(uintptr_t* __this, uintptr_t* method) {
 }
 
 // CameraUtility_StartEventCamera hook
-typedef void(__stdcall* tCameraUtility_StartEventCamera)(uintptr_t*, bool);
+typedef void(__stdcall* tCameraUtility_StartEventCamera)(uintptr_t*, bool, uintptr_t*);
 static tCameraUtility_StartEventCamera oCameraUtility_StartEventCamera = NULL;
-void hkCameraUtility_StartEventCamera(uintptr_t* _cam, bool _cameraInterp) {
+void hkCameraUtility_StartEventCamera(uintptr_t* _cam, bool _cameraInterp, uintptr_t* method) {
 	if (disableEventCamera) return;
-	return oCameraUtility_StartEventCamera(_cam, _cameraInterp);
+	return oCameraUtility_StartEventCamera(_cam, _cameraInterp, method);
 }
 
 DWORD WINAPI InitCheatThread(LPVOID lpReserved)
