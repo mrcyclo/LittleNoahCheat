@@ -377,6 +377,8 @@ DWORD WINAPI MainCheatThread(LPVOID lpReserved)
 						if (enemyBattleCharaParameter == nullptr) continue;
 
 						int* enemy_mHp = (int*)MemFindDMAAddy(enemyBattleCharaParameter, { 0x464 });
+						if (enemy_mHp == nullptr) continue;
+
 						*enemy_mHp = 0;
 					}
 				}
