@@ -19,6 +19,7 @@ bool godMode = false;
 bool autoGuard = false;
 bool infiniteHp = false;
 bool infiniteFever = false;
+bool infiniteThurst = false;
 
 uintptr_t* gameMain = nullptr;
 
@@ -82,6 +83,7 @@ HRESULT __stdcall hkPresent(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT 
 		ImGui::Checkbox("Auto Guard", &autoGuard);
 		ImGui::Checkbox("Infinite HP", &infiniteHp);
 		ImGui::Checkbox("Infinite Fever", &infiniteFever);
+		ImGui::Checkbox("Infinite Thurst", &infiniteThurst);
 
 		ImGui::End();
 	}
@@ -192,6 +194,15 @@ DWORD WINAPI MainCheatThread(LPVOID lpReserved)
 			int* playerCharaData_FeverGaugeStockNumMax = (int*)MemFindDMAAddy(playerCharaData, { 0x60 });
 			if (playerCharaData_FeverGaugeStockNum != nullptr && playerCharaData_FeverGaugeStockNumMax != nullptr) {
 				*playerCharaData_FeverGaugeStockNum = *playerCharaData_FeverGaugeStockNumMax;
+			}
+		}
+
+		// infiniteThurst
+		if (infiniteThurst) {
+			int* playerCharaData_TelepNum = (int*)MemFindDMAAddy(playerCharaData, { 0x64 });
+			int* playerCharaData_TelepNumMax = (int*)MemFindDMAAddy(playerCharaData, { 0x68 });
+			if (playerCharaData_TelepNum != nullptr && playerCharaData_TelepNumMax != nullptr) {
+				*playerCharaData_TelepNum = *playerCharaData_TelepNumMax;
 			}
 		}
 	}
