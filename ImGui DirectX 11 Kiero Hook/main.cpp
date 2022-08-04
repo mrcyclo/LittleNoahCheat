@@ -31,6 +31,8 @@ float runSpeedValue = 4;
 bool jumpSpeed = false;
 float jumpSpeedValue = 1.7;
 
+bool disableEventCamera = false;
+
 uintptr_t* gameMain = nullptr;
 
 void InitImGui()
@@ -111,6 +113,8 @@ HRESULT __stdcall hkPresent(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT 
 			ImGui::SliderFloat("", &jumpSpeedValue, 1, 5);
 		}
 
+		ImGui::Checkbox("Disable Event Camera", &disableEventCamera);
+
 		ImGui::End();
 	}
 
@@ -150,18 +154,39 @@ void hkGameMain_Update(uintptr_t* __this, uintptr_t* method) {
 	return oGameMain_Update(__this, method);
 }
 
+// CameraUtility_StartEventCamera hook
+typedef void(__stdcall* tCameraUtility_StartEventCamera)(uintptr_t*, bool);
+static tCameraUtility_StartEventCamera oCameraUtility_StartEventCamera = NULL;
+void hkCameraUtility_StartEventCamera(uintptr_t* _cam, bool _cameraInterp) {
+	if (disableEventCamera) return;
+	return oCameraUtility_StartEventCamera(_cam, _cameraInterp);
+}
+
 DWORD WINAPI InitCheatThread(LPVOID lpReserved)
 {
 	HMODULE hModule = GetModuleHandle("GameAssembly.dll");
-	uintptr_t address = (uintptr_t)ScanPattern(hModule, "\x40\x53\x48\x83\xEC\x20\x80\x3D\xD1\xAB\x62\x01\x00", "xxxxxxxxxxxxx");
-	LPVOID pTarget = reinterpret_cast<void*>(address);
+	uintptr_t address;
 
-	MH_CreateHook(pTarget, &hkGameMain_Update, (void**)&oGameMain_Update);
-	MH_EnableHook(pTarget);
+	// GameMain_Update hooking
+	address = (uintptr_t)ScanPattern(hModule, "\x40\x53\x48\x83\xEC\x20\x80\x3D\xD1\xAB\x62\x01\x00", "xxxxxxxxxxxxx");
+	LPVOID GameMain_Update_Target = reinterpret_cast<void*>(address);
+	MH_CreateHook(GameMain_Update_Target, &hkGameMain_Update, (void**)&oGameMain_Update);
 
-	while (isRunning && gameMain == nullptr) Sleep(1000);
+	// CameraUtility_StartEventCamera searching
+	address = (uintptr_t)ScanPattern(hModule, "\x48\x89\x5C\x24\x08\x48\x89\x74\x24\x10\x57\x48\x83\xEC\x20\x80\x3D\x38\xA2\x36\x01\x00", "xxxxxxxxxxxxxxxxxxxxxx");
+	LPVOID CameraUtility_StartEventCamera_Target = reinterpret_cast<void*>(address);
+	MH_CreateHook(CameraUtility_StartEventCamera_Target, &hkCameraUtility_StartEventCamera, (void**)&oCameraUtility_StartEventCamera);
 
-	MH_DisableHook(pTarget);
+	// Enable hooks
+	MH_EnableHook(GameMain_Update_Target);
+	MH_EnableHook(CameraUtility_StartEventCamera_Target);
+
+	// Wait to trainer exit
+	while (isRunning) Sleep(1000);
+
+	// Disable hooks
+	MH_DisableHook(GameMain_Update_Target);
+	MH_DisableHook(CameraUtility_StartEventCamera_Target);
 
 	return TRUE;
 }
@@ -286,7 +311,6 @@ DWORD WINAPI MainCheatThread(LPVOID lpReserved)
 				*characterBehaviour_JumpValue = jumpSpeedValue;
 			}
 		}
-
 	}
 
 	return TRUE;
