@@ -102,7 +102,7 @@ void MemNopEx(BYTE* dst, unsigned int size, HANDLE hProcess)
 
 bool IsBadReadPtr(void* p)
 {
-	MEMORY_BASIC_INFORMATION mbi = { 0 };
+	MEMORY_BASIC_INFORMATION mbi{};
 	if (VirtualQuery(p, &mbi, sizeof(mbi)))
 	{
 		DWORD mask = (PAGE_READONLY | PAGE_READWRITE | PAGE_WRITECOPY | PAGE_EXECUTE_READ | PAGE_EXECUTE_READWRITE | PAGE_EXECUTE_WRITECOPY);
@@ -130,3 +130,22 @@ uintptr_t* MemFindDMAAddy(uintptr_t* ptr, std::vector<unsigned int> offsets)
 	}
 	return addr;
 }
+
+struct List__Array {
+	void* klass; //0x0
+	void* monitor; //0x8
+	void* bounds; //0x10
+	uintptr_t max_length; //0x18
+	uintptr_t vector[32]; //0x20
+};
+
+struct List__Fields {
+	struct List__Array* _items; //0x10
+	int32_t _size; //0x18
+};
+
+struct List {
+	void* klass; //0x0
+	void* monitor; //0x8
+	struct List__Fields fields; //0x10
+};

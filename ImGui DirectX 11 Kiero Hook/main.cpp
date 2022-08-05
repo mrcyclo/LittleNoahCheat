@@ -349,47 +349,48 @@ DWORD WINAPI MainCheatThread(LPVOID lpReserved)
 			}
 		}
 
-		// autoKill
 		if (autoKill) {
-			// Pointer to C# List<T>, only for 64-bit maybe
-			uintptr_t* mAiCompornents = MemFindDMAAddy(enemyController, { 0x20 });
+			List* mAiCompornents = (List*)*MemFindDMAAddy(enemyController, { 0x20 });
 			if (mAiCompornents != nullptr) {
-				int* size = (int*)MemFindDMAAddy(mAiCompornents, { 0x18 });
-				if (*size > 0) {
-					uintptr_t* fields = MemFindDMAAddy(mAiCompornents, { 0x10 });
-					long* max_size = (long*)MemFindDMAAddy(fields, { 0x18 });
+				for (size_t i = 0; i < mAiCompornents->fields._size; i++)
+				{
+					uintptr_t enemy = mAiCompornents->fields._items->vector[i];
+					if (enemy == 0) continue;
 
-					// Loop through all items
-					for (int i = 0; i < *size; i++)
+					uintptr_t* data = MemFindDMAAddy(&enemy, { 0x28 });
+					if (data == nullptr) continue;
+
+					int* charaType = (int*)MemFindDMAAddy(data, { 0x1C0 });
+					if (charaType == nullptr) continue;
+
+					uintptr_t* parameters = nullptr;
+
+					/*
+						Player = 0,
+						Ally = 1,
+						Enemy = 2,
+						Boss = 3,
+						Gimmick = 4,
+						GimmickNoInterval = 5,
+						StatusEffect = 6,
+						None = 7
+					*/
+					switch (*charaType)
 					{
-						// Check nullptr before do anything
-						uintptr_t* enemy = MemFindDMAAddy(fields, { 0x20 + i * (unsigned int)sizeof(uintptr_t) });
-						if (enemy == nullptr) continue;
-
-						// Now do some magic with item here, ehe
-
-
-						uintptr_t* enemyBattleCharaData = nullptr;
-						uintptr_t* enemyBattleCharaParameter = nullptr;
-
-						// Try to get BattleCharaParameter of AiCompornent first
-						enemyBattleCharaData = MemFindDMAAddy(enemy, { 0x28 });
-						enemyBattleCharaParameter = MemFindDMAAddy(enemyBattleCharaData, { 0x28 });
-
-						// If BattleCharaParameter is nullptr, try to BossAiCompornent
-						if (enemyBattleCharaParameter == nullptr) {
-							enemyBattleCharaData = MemFindDMAAddy(enemy, { 0x20 });
-							enemyBattleCharaParameter = MemFindDMAAddy(enemyBattleCharaData, { 0x28 });
-						}
-
-						// Bad luck
-						if (enemyBattleCharaParameter == nullptr) continue;
-
-						int* enemy_mHp = (int*)MemFindDMAAddy(enemyBattleCharaParameter, { 0x464 });
-						if (enemy_mHp == nullptr) continue;
-
-						*enemy_mHp = 0;
+					case 2:
+						parameters = MemFindDMAAddy(data, { 0x28 });
+						break;
+					case 3:
+						parameters = MemFindDMAAddy(data, { 0x20 });
+						break;
 					}
+
+					if (parameters == nullptr) continue;
+
+					int* mHp = (int*)MemFindDMAAddy(parameters, { 0x464 });
+					if (mHp == nullptr) continue;
+
+					*mHp = 0;
 				}
 			}
 		}
