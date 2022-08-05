@@ -197,6 +197,15 @@ DWORD WINAPI InitCheatThread(LPVOID lpReserved)
 	LPVOID BattleCharaParameter_DamageHp_Target = reinterpret_cast<void*>(address);
 	MH_CreateHook(BattleCharaParameter_DamageHp_Target, &hkBattleCharaParameter_DamageHp, (void**)&oBattleCharaParameter_DamageHp);
 
+	if (
+		GameMain_Update_Target == 0 ||
+		CameraUtility_StartEventCamera_Target == 0 ||
+		BattleCharaParameter_DamageHp_Target == 0
+		) {
+		isRunning = false;
+		MessageBoxA(nullptr, "AoB Scan Error.", "Error", MB_ICONERROR);
+		return true;
+	}
 	// Enable hooks
 	MH_EnableHook(GameMain_Update_Target);
 	MH_EnableHook(CameraUtility_StartEventCamera_Target);
